@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoamStrides - Live Steps</title>
+    <style>
+        body {
+            background: #0A1F44;
+            color: gold;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            font-size: 36px;
+            margin-top: 20px;
+            text-shadow: 2px 2px 5px gold;
+        }
+        .steps-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: 20px;
+        }
+        .steps-counter {
+            background: gold;
+            color: #0A1F44;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+            display: inline-block;
+            margin-top: 15px;
+        }
+        button {
+            background: gold;
+            color: #0A1F44;
+            font-size: 18px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.7);
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #FFD700;
+            transform: scale(1.05);
+        }
+        #calendar-container {
+            width: 90%;
+            max-width: 600px;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 30px auto;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+        .calendar-header {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0A1F44;
+            margin-bottom: 10px;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        .day {
+            padding: 10px;
+            font-size: 16px;
+            background: #1A2B6D;
+            color: gold;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(255, 215, 0, 0.6);
+        }
+        .empty {
+            background: transparent;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>FoamStrides - Live Steps</h1>
+
+    <div class="steps-container">
+        <button onclick="connectArduino()">Connect to Arduino</button>
+        <div class="steps-counter">Live Steps: <span id="liveSteps">0</span></div>
+    </div>
+
+    <div id="calendar-container">
+        <div class="calendar-header">Step Count History</div>
+        <div id="calendar" class="calendar"></div>
+    </div>
+
+    <script>
+        let port;
+
+        async function connectArduino() {
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 115200 });
+
+                const reader = port.readable.getReader();
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    const steps = new TextDecoder().decode(value).trim();
+                    document.getElementById("liveSteps").innerText = steps;
+                }
+            } catch (err) {
+                console.error("Error connecting to Arduino:", err);
+            }
+        }
+
+        function generateCalendar() {
+            const calendar = document.getElementById("calendar");
+            calendar.innerHTML = "";
+            const today = new Date();
+            const startDate = new Date(today.getFullYear(), 1, 1); // Start from Feb 1st
+            const firstDay = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+            const daysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay.getDay(); i++) {
+                let emptyCell = document.createElement("div");
+                emptyCell.classList.add("day", "empty");
+                calendar.appendChild(emptyCell);
+            }
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                let stepCount = Math.floor(Math.random() * 10000 + 500);
+                let dayCell = document.createElement("div");
+                dayCell.classList.add("day");
+                dayCell.innerText = `${i}\n${stepCount} steps`;
+                calendar.appendChild(dayCell);
+            }
+        }
+
+        generateCalendar();
+    </script>
+</body>
+</html>
