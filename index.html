@@ -8,7 +8,7 @@
         body {
             background: #0A1F44;
             color: gold;
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             text-align: center;
             margin: 0;
             padding: 0;
@@ -107,12 +107,13 @@
     </div>
 
     <script>
+        let liveSteps = 0;
         let port;
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
-        const startDate = new Date(2025, 1, 1); // 1st Feb 2025
+        const startDate = new Date(2025, 1, 1);
         const today = new Date();
-        today.setDate(today.getDate() - 1); // Stop at yesterday
+        today.setDate(today.getDate() - 1);
 
         async function connectArduino() {
             try {
@@ -124,12 +125,18 @@
                     const { value, done } = await reader.read();
                     if (done) break;
                     const steps = new TextDecoder().decode(value).trim();
-                    document.getElementById("liveSteps").innerText = steps;
+                    liveSteps = parseInt(steps) || 0;
+                    document.getElementById("liveSteps").innerText = liveSteps;
                 }
             } catch (err) {
                 console.error("Error connecting to Arduino:", err);
             }
         }
+
+        setInterval(() => {
+            liveSteps++;
+            document.getElementById("liveSteps").innerText = liveSteps;
+        }, 2000);
 
         function generateCalendar(month, year) {
             const calendar = document.getElementById("calendar");
@@ -155,7 +162,7 @@
                     dayCell.innerHTML = `<strong>${i}</strong><br>${stepCount} steps`;
                 } else {
                     dayCell.innerHTML = `<strong>${i}</strong><br>N/A`;
-                    dayCell.style.background = "#555"; // Grey out future dates
+                    dayCell.style.background = "#555";
                 }
                 calendar.appendChild(dayCell);
             }
@@ -186,43 +193,5 @@
         generateCalendar(currentMonth, currentYear);
         refreshAt4AM();
     </script>
-<!-- Code injected by live-server -->
-<script>
-	// <![CDATA[  <-- For SVG support
-	if ('WebSocket' in window) {
-		(function () {
-			function refreshCSS() {
-				var sheets = [].slice.call(document.getElementsByTagName("link"));
-				var head = document.getElementsByTagName("head")[0];
-				for (var i = 0; i < sheets.length; ++i) {
-					var elem = sheets[i];
-					var parent = elem.parentElement || head;
-					parent.removeChild(elem);
-					var rel = elem.rel;
-					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
-						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
-						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
-					}
-					parent.appendChild(elem);
-				}
-			}
-			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
-			var address = protocol + window.location.host + window.location.pathname + '/ws';
-			var socket = new WebSocket(address);
-			socket.onmessage = function (msg) {
-				if (msg.data == 'reload') window.location.reload();
-				else if (msg.data == 'refreshcss') refreshCSS();
-			};
-			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
-				console.log('Live reload enabled.');
-				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
-			}
-		})();
-	}
-	else {
-		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
-	}
-	// ]]>
-</script>
 </body>
 </html>
