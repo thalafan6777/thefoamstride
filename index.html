@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoamStrides - Live Steps</title>
+    <title>FoamStrides - Step Tracker</title>
     <style>
         body {
             background: #0A1F44;
@@ -19,11 +19,7 @@
             text-shadow: 2px 2px 5px gold;
         }
         .steps-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            margin: 20px;
+            margin: 20px 0;
         }
         .steps-counter {
             background: gold;
@@ -34,7 +30,6 @@
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
             display: inline-block;
-            margin-top: 15px;
         }
         button {
             background: gold;
@@ -45,7 +40,6 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 20px;
             box-shadow: 0 4px 10px rgba(255, 215, 0, 0.7);
             transition: 0.3s;
         }
@@ -58,20 +52,26 @@
             max-width: 600px;
             background: white;
             border-radius: 10px;
-            padding: 15px;
+            padding: 20px;
             margin: 30px auto;
             box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            text-align: center;
         }
         .calendar-header {
             font-size: 24px;
             font-weight: bold;
             color: #0A1F44;
-            margin-bottom: 10px;
+        }
+        .calendar-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
         }
         .calendar {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
+            gap: 10px;
+            padding: 10px;
         }
         .day {
             padding: 10px;
@@ -98,11 +98,21 @@
 
     <div id="calendar-container">
         <div class="calendar-header">Step Count History</div>
+        <div id="monthYear" style="color: #FFB800; font-size: 18px; margin-bottom: 10px;"></div>
+        <div class="calendar-navigation">
+            <button onclick="changeMonth(-1)">Previous</button>
+            <button onclick="changeMonth(1)">Next</button>
+        </div>
         <div id="calendar" class="calendar"></div>
     </div>
 
     <script>
         let port;
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        const startDate = new Date(2025, 1, 1); // 1st Feb 2025
+        const today = new Date();
+        today.setDate(today.getDate() - 1); // Stop at yesterday
 
         async function connectArduino() {
             try {
@@ -121,30 +131,98 @@
             }
         }
 
-        function generateCalendar() {
+        function generateCalendar(month, year) {
             const calendar = document.getElementById("calendar");
             calendar.innerHTML = "";
-            const today = new Date();
-            const startDate = new Date(today.getFullYear(), 1, 1); // Start from Feb 1st
-            const firstDay = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-            const daysInMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+            document.getElementById("monthYear").innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
 
-            for (let i = 0; i < firstDay.getDay(); i++) {
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
                 let emptyCell = document.createElement("div");
                 emptyCell.classList.add("day", "empty");
                 calendar.appendChild(emptyCell);
             }
 
-            for (let i = 1; i <= daysInMonth; i++) {
-                let stepCount = Math.floor(Math.random() * 10000 + 500);
+            for (let i = 1; i <= lastDay; i++) {
+                let currentDate = new Date(year, month, i);
                 let dayCell = document.createElement("div");
                 dayCell.classList.add("day");
-                dayCell.innerText = `${i}\n${stepCount} steps`;
+
+                if (currentDate >= startDate && currentDate <= today) {
+                    let stepCount = Math.floor(Math.random() * 10000 + 500);
+                    dayCell.innerHTML = `<strong>${i}</strong><br>${stepCount} steps`;
+                } else {
+                    dayCell.innerHTML = `<strong>${i}</strong><br>N/A`;
+                    dayCell.style.background = "#555"; // Grey out future dates
+                }
                 calendar.appendChild(dayCell);
             }
         }
 
-        generateCalendar();
+        function changeMonth(direction) {
+            currentMonth += direction;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            generateCalendar(currentMonth, currentYear);
+        }
+
+        function refreshAt4AM() {
+            const now = new Date();
+            const nextRefresh = new Date();
+            nextRefresh.setHours(4, 0, 0, 0);
+            if (now >= nextRefresh) {
+                nextRefresh.setDate(nextRefresh.getDate() + 1);
+            }
+            setTimeout(() => location.reload(), nextRefresh - now);
+        }
+
+        generateCalendar(currentMonth, currentYear);
+        refreshAt4AM();
     </script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
 </body>
 </html>
